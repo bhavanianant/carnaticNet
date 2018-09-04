@@ -2,8 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import collections
+import pickle
+import time
 
-proxies = {'http': 'http://proxy-bos-v.fmr.com:8000'}
+#proxies = {'http': 'http://proxy-bos-v.fmr.com:8000'}
 
 pallavi = "\s[pP]allavi"
 caranams = "\s[cC]ara[nN]am"
@@ -27,7 +29,15 @@ def isComposition(tag): #defining composition link as a link in the bulleted(num
 	return (tag.name == 'a') and (tag.parent.name == 'li')
 
 for composer in composerSites.iterkeys():
-	composerPage = requests.get(composerSites[composer], proxies=proxies)
+	#composerPage = requests.get(composerSites[composer], proxies=proxies)
+	composerPage = ""
+	while composerPage == "":
+		try:
+			composerPage = requests.get(composerSites[composer])
+		except requests.exceptions.ConnectionError:
+			time.sleep(5)
+
+
 	if(composerPage.status_code != 200):
 		print "Error: could not get webpage: " + composerSites[composer] + "(" + composer + ")"
 		break
@@ -38,8 +48,17 @@ for composer in composerSites.iterkeys():
 		break
 	compositions = map(lambda c: "http://www.karnatik.com/" + c['href'], compositions)
 
+
+
 	for composition in compositions:
-		songPage = requests.get(composition, proxies=proxies)
+		#songPage = requests.get(composition, proxies=proxies)
+		songPage = ""
+		while songPage == "":
+			try:
+				songPage = requests.get(composition)
+			except requests.exceptions.ConnectionError:
+				time.sleep(5)
+		
 		if(songPage.status_code != 200):
 			print "Error: could not get webpage: " + composition
 			continue
@@ -51,6 +70,11 @@ for composer in composerSites.iterkeys():
 			line = stanzaFlag.next_sibling.contents[0].strip()
 			lyrics[composer].update(re.findall(r'\w+', line))
 
+
 for composer in lyrics.iterkeys():
 	print composer
 	print lyrics[composer].most_common(10)
+
+
+# pickle the dictionary 
+pickle.dump( lyrics, open( "composer_lyrics.pkl", "wb" ) )
