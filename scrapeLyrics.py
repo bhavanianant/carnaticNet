@@ -2,12 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import collections
+from time import sleep
 
-proxies = {'http': 'http://proxy-bos-v.fmr.com:8000'}
 
-pallavi = "\s[pP]allavi"
-caranams = "\s[cC]ara[nN]am"
-partOfSong = pallavi
+pallavi = "\s[pP]allavi"        #meaning: "chorus"
+caranams = "\s[cC]ara[nN]am"    #meaning: "verse"
+partOfSong = pallavi            #Choruses/refrains were analyzed in this demo
 
 composerSites = {
 	"Thyagaraja":"http://www.karnatik.com/co1006.shtml",
@@ -27,7 +27,7 @@ def isComposition(tag): #defining composition link as a link in the bulleted(num
 	return (tag.name == 'a') and (tag.parent.name == 'li')
 
 for composer in composerSites.iterkeys():
-	composerPage = requests.get(composerSites[composer], proxies=proxies)
+	composerPage = requests.get(composerSites[composer], verify=False)
 	if(composerPage.status_code != 200):
 		print "Error: could not get webpage: " + composerSites[composer] + "(" + composer + ")"
 		break
@@ -39,7 +39,7 @@ for composer in composerSites.iterkeys():
 	compositions = map(lambda c: "http://www.karnatik.com/" + c['href'], compositions)
 
 	for composition in compositions:
-		songPage = requests.get(composition, proxies=proxies)
+		songPage = requests.get(composition, verify=False)
 		if(songPage.status_code != 200):
 			print "Error: could not get webpage: " + composition
 			continue
@@ -50,6 +50,7 @@ for composer in composerSites.iterkeys():
 		else:
 			line = stanzaFlag.next_sibling.contents[0].strip()
 			lyrics[composer].update(re.findall(r'\w+', line))
+        sleep(5)
 
 for composer in lyrics.iterkeys():
 	print composer
